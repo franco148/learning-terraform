@@ -17,7 +17,7 @@ data "aws_ami" "app_ami" {
 module "tf_vpc_module" {
   source = "terraform-aws-modules/vpc/aws"
 
-  name = "tf_learning_vpc"
+  name = "tf-learning-vpc"
   cidr = "10.0.0.0/16"
 
   azs             = ["sa-east-1a", "sa-east-1b", "sa-east-1c"]
@@ -33,7 +33,7 @@ module "tf_autoscaling_module" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "7.4.1"
   
-  name     = "tf_learning"
+  name     = "tf-learning"
   min_size = 1
   max_size = 2
 
@@ -57,7 +57,7 @@ module "tf_alb_module" {
 
   target_groups = {
     ex-instance = {
-      name_prefix      = "tf_"
+      name_prefix      = "tf-"
       protocol         = "HTTP"
       port             = 80
       target_type      = "instance"      
@@ -74,7 +74,7 @@ module "tf_alb_module" {
 module "tf-security-group-module" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "5.1.2"
-  name    = "tf_learning_sg_2"
+  name    = "tf-learning-sg-2"
 
   # vpc_id  = data.aws_vpc.default.id // Before vpc module
   vpc_id = module.tf_vpc_module.vpc_id
