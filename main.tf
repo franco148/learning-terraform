@@ -14,10 +14,6 @@ data "aws_ami" "app_ami" {
   owners = ["979382823631"] # Bitnami
 }
 
-# data "aws_vpc" "default" {
-#   default = true
-# }
-
 module "tf_vpc_module" {
   source = "terraform-aws-modules/vpc/aws"
 
@@ -33,19 +29,47 @@ module "tf_vpc_module" {
   }
 }
 
-resource "aws_instance" "tf_learning" {
-  ami           = data.aws_ami.app_ami.id
+module "tf_autoscaling_module" {
+  source  = "terraform-aws-modules/autoscaling/aws"
+  version = "7.4.1"
+  
+  name     = "tf_learning"
+  min_size = 1
+  max_size = 2
+
+  vpc_zone_identifier = module.tf_vpc_module.public_subnets
+  target_group_arns   = module.tf_alb_module.security_group_arns
+  security_groups     = [module.tf-security-group-module.security_group_id]
+
+  image_id      = data.aws_ami.app_ami.id
   instance_type = var.instance_type
+}
 
-  # vpc_security_group_ids = [ aws_security_group.tf_learning_sg.id ] // Before security group
-  vpc_security_group_ids = [ module.tf-security-group-module.security_group_id ]
 
-  subnet_id = module.tf_vpc_module.public_subnets[0]
+module "tf_alb_module" {
+  source = "terraform-aws-modules/alb/aws"
+
+  name    = "tf_learning_alb"
+  vpc_id  = module.tf_vpc_module.vpc_id
+  subnets = module.tf_vpc_module.public_subnets
+
+  security_groups = [module.tf-security-group-module.security_group_id]
+
+  target_groups = {
+    ex-instance = {
+      name_prefix      = "tf_"
+      protocol         = "HTTP"
+      port             = 80
+      target_type      = "instance"      
+    }
+  }
 
   tags = {
-    Name = "learning-terraform"
+    Environment = "dev"
+    Project     = "Terraform Learning"
   }
 }
+
 
 module "tf-security-group-module" {
   source  = "terraform-aws-modules/security-group/aws"
@@ -61,45 +85,3 @@ module "tf-security-group-module" {
   egress_rules       = ["all-all"]
   egress_cidr_blocks = ["0.0.0.0/0"]
 }
-
-# resource "aws_security_group" "tf_learning_sg" {
-#   name        = "tf_learning_sg"
-#   description = "Allow http and https in. Allow everything out"
-
-#   tags = {
-#     Terraform = "true"
-#   }
-
-#   vpc_id = data.aws_vpc.default.id
-# }
-
-# resource "aws_security_group_rule" "tf_learning_sg_rule_http_in" {
-#   type        = "ingress"
-#   from_port   = 80
-#   to_port     = 80
-#   protocol    = "tcp"
-#   cidr_blocks = ["0.0.0.0/0"]
-
-#   security_group_id = aws_security_group.tf_learning_sg.id
-# }
-
-
-# resource "aws_security_group_rule" "tf_learning_sg_rule_https_in" {
-#   type        = "ingress"
-#   from_port   = 443
-#   to_port     = 443
-#   protocol    = "tcp"
-#   cidr_blocks = ["0.0.0.0/0"]
-
-#   security_group_id = aws_security_group.tf_learning_sg.id
-# }
-
-
-# resource "aws_security_group_rule" "tf_learning_sg_rule_everything_out" {
-#   type        = "egress"
-#   from_port   = 0
-#   to_port     = 0
-#   protocol    = "-1"
-#   cidr_blocks = ["0.0.0.0/0"]
-#   security_group_id = aws_security_group.tf_learning_sg.id
-# }
