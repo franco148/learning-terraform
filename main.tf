@@ -38,7 +38,7 @@ module "tf_autoscaling_module" {
   max_size = 2
 
   vpc_zone_identifier = module.tf_vpc_module.public_subnets
-  target_group_arns   = module.tf_alb_module.security_group_arn
+  target_group_arns   = [module.tf_alb_module.security_group_arn]
   security_groups     = [module.tf-security-group-module.security_group_id]
 
   image_id      = data.aws_ami.app_ami.id
