@@ -49,7 +49,7 @@ module "tf_autoscaling_module" {
 module "tf_alb_module" {
   source = "terraform-aws-modules/alb/aws"
 
-  name    = "tf_learning_alb"
+  name    = "tf-learning-alb"
   vpc_id  = module.tf_vpc_module.vpc_id
   subnets = module.tf_vpc_module.public_subnets
 
